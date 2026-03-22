@@ -1,7 +1,11 @@
 import argparse
 import json
+import os
 
+from dotenv import load_dotenv
 import torch
+
+load_dotenv()
 from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 from peft import LoraConfig
@@ -38,6 +42,7 @@ def load_training_dataset(dataset_url: str):
 
 def load_model(model_id: str, quant_cfg: dict):
     print("Loading model & tokenizer …")
+    hf_token = os.environ.get("HF_TOKEN")
     bits = quant_cfg.get("bits", 4)
 
     if bits == 8:
@@ -47,7 +52,7 @@ def load_model(model_id: str, quant_cfg: dict):
     else:
         raise ValueError(f"Unsupported bits: {bits}. Use 4 or 8.")
 
-    tokenizer = AutoTokenizer.from_pretrained(model_id)
+    tokenizer = AutoTokenizer.from_pretrained(model_id, token=hf_token)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "right"
@@ -56,6 +61,7 @@ def load_model(model_id: str, quant_cfg: dict):
         model_id,
         quantization_config=bnb_config,
         device_map="auto",
+        token=hf_token,
     )
     return model, tokenizer
 
@@ -118,14 +124,8 @@ def save_adapter(trainer, tokenizer, output_dir: str):
 
 # ── Quick inference test ─────────────────────────────────────────────
 
-def test_inference(model, tokenizer):
+def test_inference(model, tokenizer, prompt: str):
     model.eval()
-    prompt = (
-        "Below is an instruction that describes a task. "
-        "Write a response that appropriately completes the request.\n\n"
-        "### Instruction:\nWhats x, when x+x^2+1/x=4?\n\n"
-        "### Response:\n"
-    )
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
     with torch.no_grad():
         output = model.generate(**inputs, max_new_tokens=128, temperature=0.7, do_sample=True)
@@ -147,5 +147,6 @@ if __name__ == "__main__":
     trainer = train(model, tokenizer, dataset, peft_config, cfg["output_dir"], cfg["training"])
     save_adapter(trainer, tokenizer, cfg["output_dir"])
 
-    if not cfg.get("skip_test", False):
-        test_inference(trainer.model, tokenizer)
+    test_prompt = cfg.get("test_prompt")
+    if test_prompt:
+        test_inference(trainer.model, tokenizer, test_prompt)
