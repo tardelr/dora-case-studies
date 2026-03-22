@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# ML/Data
+*.pt
+*.pth
+*.bin
+*.safetensors
+*.gguf
+*.h5
+*.onnx
+wandb/
+runs/
+outputs/
+checkpoints/
+*.log
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE
+.vscode/
+.idea/
+
+# Environment
+.env
+.env.local
+
+# AI context
+project-ai-context.md
+CLAUDE.md
+
+# Distribution
+*.whl
