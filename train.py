@@ -62,6 +62,7 @@ def load_model(model_id: str, quant_cfg: dict):
         quantization_config=bnb_config,
         device_map="auto",
         token=hf_token,
+        attn_implementation="eager"
     )
     return model, tokenizer
 

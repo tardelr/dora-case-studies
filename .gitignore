@@ -47,6 +47,7 @@ checkpoints/
 # AI context
 project-ai-context.md
 CLAUDE.md
+authors_parameters.md
 
 # Distribution
 *.whl
