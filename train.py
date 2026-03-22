@@ -21,7 +21,7 @@ def load_config(path: str = "train_config.json") -> dict:
 
 # ── Load dataset ─────────────────────────────────────────────────────
 
-def load_training_dataset(dataset_url: str):
+def load_training_dataset(dataset_url: str, max_samples: int = None):
     print("Loading dataset …")
     dataset = load_dataset("json", data_files=dataset_url, split="train")
 
@@ -34,7 +34,12 @@ def load_training_dataset(dataset_url: str):
         return example
 
     dataset = dataset.map(format_example)
-    print(f"Loaded {len(dataset)} examples")
+
+    if max_samples and max_samples < len(dataset):
+        dataset = dataset.select(range(max_samples))
+        print(f"Subsampled to {len(dataset)} examples")
+    else:
+        print(f"Loaded {len(dataset)} examples")
     return dataset
 
 
@@ -142,7 +147,7 @@ if __name__ == "__main__":
 
     cfg = load_config(args.config)
 
-    dataset = load_training_dataset(cfg["dataset_url"])
+    dataset = load_training_dataset(cfg["dataset_url"], max_samples=cfg.get("max_samples"))
     model, tokenizer = load_model(cfg["model_id"], cfg["quantization"])
     peft_config = get_peft_config(cfg["lora"], use_dora=cfg["use_dora"])
     trainer = train(model, tokenizer, dataset, peft_config, cfg["output_dir"], cfg["training"])
