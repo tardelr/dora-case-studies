@@ -62,7 +62,7 @@ def load_model(model_id: str, quant_cfg: dict):
         quantization_config=bnb_config,
         device_map="auto",
         token=hf_token,
-        attn_implementation="eager"
+        attn_implementation="flash_attention_2" # not default, used to workaround cUDNN bug in lightning
     )
     return model, tokenizer
 
@@ -111,7 +111,8 @@ def train(model, tokenizer, dataset, peft_config, output_dir: str, train_cfg: di
         args=training_args,
         peft_config=peft_config,
     )
-    trainer.train()
+    resume_from_checkpoint = train_cfg.get("resume_from_checkpoint")
+    trainer.train(resume_from_checkpoint=resume_from_checkpoint)
     return trainer
 
 
@@ -152,6 +153,8 @@ if __name__ == "__main__":
         train_cfg["seed"] = cfg["seed"]
     if "max_steps" in cfg:
         train_cfg["max_steps"] = cfg["max_steps"]
+    if cfg.get("resume_from_checkpoint"):
+        train_cfg["resume_from_checkpoint"] = cfg["resume_from_checkpoint"]
     trainer = train(model, tokenizer, dataset, peft_config, cfg["output_dir"], train_cfg)
     save_adapter(trainer, tokenizer, cfg["output_dir"])
 

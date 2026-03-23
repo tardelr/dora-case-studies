@@ -5,8 +5,8 @@
     "use_dora": false,
     "seed": 42,
     "max_steps": -1,
+    "resume_from_checkpoint": false,
     "test_prompt": "Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\nWhats x, when x+x^2+1/x=4?\n\n### Response:\n",
-
     "quantization": {
         "bits": 4
     },
