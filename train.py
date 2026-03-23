@@ -93,7 +93,7 @@ def train(model, tokenizer, dataset, peft_config, output_dir: str, train_cfg: di
         learning_rate=train_cfg["learning_rate"],
         lr_scheduler_type=train_cfg["lr_scheduler_type"],
         num_train_epochs=train_cfg["num_train_epochs"],
-        warmup_ratio=train_cfg["warmup_ratio"],
+        warmup_steps=train_cfg.get("warmup_steps", 0),
         logging_steps=train_cfg["logging_steps"],
         save_steps=train_cfg["save_steps"],
         max_steps=train_cfg.get("max_steps", -1),
