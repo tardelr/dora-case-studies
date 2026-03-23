@@ -21,7 +21,7 @@ def load_config(path: str = "train_config.json") -> dict:
 
 # ── Load dataset ─────────────────────────────────────────────────────
 
-def load_training_dataset(dataset_url: str, max_samples: int = None):
+def load_training_dataset(dataset_url: str):
     print("Loading dataset …")
     dataset = load_dataset("json", data_files=dataset_url, split="train")
 
@@ -34,12 +34,7 @@ def load_training_dataset(dataset_url: str, max_samples: int = None):
         return example
 
     dataset = dataset.map(format_example)
-
-    if max_samples and max_samples < len(dataset):
-        dataset = dataset.select(range(max_samples))
-        print(f"Subsampled to {len(dataset)} examples")
-    else:
-        print(f"Loaded {len(dataset)} examples")
+    print(f"Loaded {len(dataset)} examples")
     return dataset
 
 
@@ -101,6 +96,8 @@ def train(model, tokenizer, dataset, peft_config, output_dir: str, train_cfg: di
         warmup_ratio=train_cfg["warmup_ratio"],
         logging_steps=train_cfg["logging_steps"],
         save_steps=train_cfg["save_steps"],
+        max_steps=train_cfg.get("max_steps", -1),
+        seed=train_cfg.get("seed", 42),
         bf16=train_cfg["bf16"],
         max_grad_norm=train_cfg["max_grad_norm"],
         dataset_text_field="text",
@@ -147,10 +144,15 @@ if __name__ == "__main__":
 
     cfg = load_config(args.config)
 
-    dataset = load_training_dataset(cfg["dataset_url"], max_samples=cfg.get("max_samples"))
+    dataset = load_training_dataset(cfg["dataset_url"])
     model, tokenizer = load_model(cfg["model_id"], cfg["quantization"])
     peft_config = get_peft_config(cfg["lora"], use_dora=cfg["use_dora"])
-    trainer = train(model, tokenizer, dataset, peft_config, cfg["output_dir"], cfg["training"])
+    train_cfg = cfg["training"]
+    if "seed" in cfg:
+        train_cfg["seed"] = cfg["seed"]
+    if "max_steps" in cfg:
+        train_cfg["max_steps"] = cfg["max_steps"]
+    trainer = train(model, tokenizer, dataset, peft_config, cfg["output_dir"], train_cfg)
     save_adapter(trainer, tokenizer, cfg["output_dir"])
 
     test_prompt = cfg.get("test_prompt")

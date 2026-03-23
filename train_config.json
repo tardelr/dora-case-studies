@@ -3,7 +3,8 @@
     "dataset_url": "https://raw.githubusercontent.com/AGI-Edgerunners/LLM-Adapters/main/ft-training_set/commonsense_170k.json",
     "output_dir": "./meta-llama-8b-lora-commonsense",
     "use_dora": false,
-    "max_samples": 1000,
+    "seed": 42,
+    "max_steps": -1,
     "test_prompt": "Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\nWhats x, when x+x^2+1/x=4?\n\n### Response:\n",
 
     "quantization": {
@@ -13,7 +14,7 @@
     "lora": {
         "r": 16,
         "lora_alpha": 32,
-        "target_modules": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+        "target_modules": ["q_proj", "k_proj", "v_proj", "up_proj", "down_proj"],
         "lora_dropout": 0.05,
         "bias": "none",
         "task_type": "CAUSAL_LM"
