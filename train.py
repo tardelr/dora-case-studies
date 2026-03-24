@@ -118,11 +118,16 @@ def train(model, tokenizer, dataset, peft_config, output_dir: str, train_cfg: di
 
 # ── Save adapter ─────────────────────────────────────────────────────
 
-def save_adapter(trainer, tokenizer, output_dir: str):
+def save_adapter(trainer, tokenizer, output_dir: str, config: dict = None):
     adapter_path = f"{output_dir}/final_adapter"
     trainer.model.save_pretrained(adapter_path)
     tokenizer.save_pretrained(adapter_path)
     print(f"Adapter saved to {adapter_path}")
+    if config is not None:
+        config_path = f"{output_dir}/training_config.json"
+        with open(config_path, "w") as f:
+            json.dump(config, f, indent=2)
+        print(f"Training config saved to {config_path}")
     return adapter_path
 
 
@@ -156,7 +161,7 @@ if __name__ == "__main__":
     if cfg.get("resume_from_checkpoint"):
         train_cfg["resume_from_checkpoint"] = cfg["resume_from_checkpoint"]
     trainer = train(model, tokenizer, dataset, peft_config, cfg["output_dir"], train_cfg)
-    save_adapter(trainer, tokenizer, cfg["output_dir"])
+    save_adapter(trainer, tokenizer, cfg["output_dir"], config=cfg)
 
     test_prompt = cfg.get("test_prompt")
     if test_prompt:
