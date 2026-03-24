@@ -3,7 +3,7 @@
     "adapter_path": "./qwen2.5-4b-lora-commonsense/final_adapter",
     "output": "results_qwen2.5_4b_lora.json",
 
-    "tasks": ["hellaswag", "arc_easy"],
+    "tasks": ["boolq", "piqa", "siqa", "hellaswag", "winogrande", "arc_easy", "arc_challenge", "openbookqa"],
     "num_fewshot": 0,
     "limit": null,
     "batch_size": 16
