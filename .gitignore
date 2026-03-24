@@ -45,7 +45,6 @@ checkpoints/
 .env.local
 
 # AI context
-project-ai-context.md
 CLAUDE.md
 authors_parameters.md
 

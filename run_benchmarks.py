@@ -10,12 +10,9 @@ from lm_eval.models.huggingface import HFLM
 
 # ── Config ──────────────────────────────────────────────────────────
 
-BASE_MODEL_ID = "meta-llama/Meta-Llama-3.1-8B"
-OUTPUT_DIR = "./meta-llama-8b-dora-commonsense"
-ADAPTER_PATH = f"{OUTPUT_DIR}/final_adapter"
-TASKS = ["hellaswag", "arc_easy"]
-NUM_FEWSHOT = 0
-LIMIT = None  # set to e.g. 50 for a quick sanity check
+def load_config(path: str = "evals_config.json") -> dict:
+    with open(path) as f:
+        return json.load(f)
 
 
 # ── Load base model & tokenizer ─────────────────────────────────────
@@ -80,18 +77,28 @@ def export_results(results: dict, output_path: str):
 # ── Main ─────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run lm-eval benchmarks on a LoRA/DoRA fine-tuned model")
-    parser.add_argument("--base-model", default=BASE_MODEL_ID)
-    parser.add_argument("--adapter-path", default=ADAPTER_PATH)
-    parser.add_argument("--tasks", nargs="+", default=TASKS)
-    parser.add_argument("--num-fewshot", type=int, default=NUM_FEWSHOT)
-    parser.add_argument("--limit", type=int, default=LIMIT)
-    parser.add_argument("--batch-size", type=int, default=16)
-    parser.add_argument("--output", default="results_llama_8b_dora.json")
+    parser = argparse.ArgumentParser(description="Run lm-eval benchmarks — config-driven")
+    parser.add_argument("--config", default="evals_config.json", help="Path to evals config JSON")
     args = parser.parse_args()
 
-    base_model, tokenizer = load_base_model(args.base_model)
-    merged_model = merge_adapter(base_model, args.adapter_path)
-    results = run_benchmarks(merged_model, tokenizer, args.tasks, args.num_fewshot, args.limit, args.batch_size)
+    cfg = load_config(args.config)
+
+    base_model, tokenizer = load_base_model(cfg["base_model_id"])
+
+    adapter_path = cfg.get("adapter_path")
+    if adapter_path:
+        eval_model = merge_adapter(base_model, adapter_path)
+    else:
+        print("No adapter_path set — evaluating base model directly.")
+        eval_model = base_model
+
+    results = run_benchmarks(
+        eval_model,
+        tokenizer,
+        tasks=cfg["tasks"],
+        num_fewshot=cfg.get("num_fewshot", 0),
+        limit=cfg.get("limit"),
+        batch_size=cfg.get("batch_size", 16),
+    )
     print_results(results)
-    export_results(results, args.output)
+    export_results(results, cfg["output"])
