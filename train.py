@@ -48,7 +48,12 @@ def load_model(model_id: str, quant_cfg: dict):
     if bits == 8:
         bnb_config = BitsAndBytesConfig(load_in_8bit=True)
     elif bits == 4:
-        bnb_config = BitsAndBytesConfig(load_in_4bit=True)
+        bnb_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type=quant_cfg.get("quant_type", "nf4"),
+            bnb_4bit_compute_dtype=torch.bfloat16,
+            bnb_4bit_use_double_quant=quant_cfg.get("double_quant", True),
+        )
     else:
         raise ValueError(f"Unsupported bits: {bits}. Use 4 or 8.")
 

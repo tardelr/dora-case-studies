@@ -6,7 +6,9 @@
       "skip_test": false,
 
       "quantization": {
-          "bits": 4
+          "bits": 4,
+          "quant_type": "nf4",
+          "double_quant": true
       },
 
       "lora": {
