@@ -1,7 +1,7 @@
 {
-    "base_model_id": "Qwen/Qwen2.5-4B",
-    "adapter_path": "./qwen2.5-4b-lora-commonsense/final_adapter",
-    "output": "results_qwen2.5_4b_lora.json",
+    "model_name": "qlora",
+    "base_model_id": "Qwen/Qwen2.5-1.5B",
+    "adapter_path": "./qwen2.5-1.5b-lora-commonsense/final_adapter",
 
     "tasks": ["boolq", "piqa", "siqa", "hellaswag", "winogrande", "arc_easy", "arc_challenge", "openbookqa"],
     "num_fewshot": 0,

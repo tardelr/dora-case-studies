@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import shutil
 
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -11,7 +12,7 @@ from lm_eval.models.huggingface import HFLM
 
 # ── Config ──────────────────────────────────────────────────────────
 
-def load_config(path: str = "evals_config.json") -> dict:
+def load_config(path: str) -> dict:
     with open(path) as f:
         return json.load(f)
 
@@ -41,7 +42,7 @@ def merge_adapter(base_model, adapter_path: str):
 
 # ── Run benchmarks ───────────────────────────────────────────────────
 
-def run_benchmarks(model, tokenizer, tasks: list[str], num_fewshot: int = 0, limit=None, batch_size: int = 16):
+def run_benchmarks(model, tokenizer, tasks, num_fewshot=0, limit=None, batch_size=16):
     print(f"Running benchmarks: {tasks}")
     eval_model = HFLM(
         pretrained=model,
@@ -67,35 +68,37 @@ def print_results(results: dict):
         print(f"  {task:>12s}  acc={acc}  acc_norm={acc_norm}")
 
 
-# ── Export results ───────────────────────────────────────────────────
+# ── Export results & config ──────────────────────────────────────────
 
-def export_results(results: dict, output_path: str):
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    with open(output_path, "w") as f:
+def export_results(results: dict, config_path: str, output_dir: str):
+    os.makedirs(output_dir, exist_ok=True)
+
+    results_path = os.path.join(output_dir, "results.json")
+    with open(results_path, "w") as f:
         json.dump(results, f, default=str, indent=2)
-    print(f"Results saved to {output_path}")
+    print(f"Results saved to {results_path}")
+
+    config_dest = os.path.join(output_dir, "eval_config.json")
+    shutil.copy2(config_path, config_dest)
+    print(f"Config saved to {config_dest}")
 
 
 # ── Main ─────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run lm-eval benchmarks — config-driven")
-    parser.add_argument("--config", default="eval/evals_config.json", help="Path to evals config JSON")
-    parser.add_argument("--model-name", required=True,
-                        help="Name for this model run (used as subfolder in eval-results/)")
-    parser.add_argument("--adapter-path", default=None,
-                        help="Override adapter_path from config (omit to eval base model)")
+    parser.add_argument("--config", required=True, help="Path to eval config JSON")
     args = parser.parse_args()
 
     cfg = load_config(args.config)
 
     base_model, tokenizer = load_base_model(cfg["base_model_id"])
 
-    adapter_path = args.adapter_path or cfg.get("adapter_path")
+    adapter_path = cfg.get("adapter_path")
     if adapter_path:
         eval_model = merge_adapter(base_model, adapter_path)
     else:
-        print("No adapter_path set — evaluating base model directly.")
+        print("No adapter_path — evaluating base model directly.")
         eval_model = base_model
 
     results = run_benchmarks(
@@ -108,5 +111,5 @@ if __name__ == "__main__":
     )
     print_results(results)
 
-    output_path = os.path.join("eval-results", args.model_name, "results.json")
-    export_results(results, output_path)
+    output_dir = os.path.join("eval-results", cfg["model_name"])
+    export_results(results, args.config, output_dir)

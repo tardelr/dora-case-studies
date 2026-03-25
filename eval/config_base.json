@@ -1,0 +1,10 @@
+{
+    "model_name": "base",
+    "base_model_id": "Qwen/Qwen2.5-1.5B",
+    "adapter_path": null,
+
+    "tasks": ["boolq", "piqa", "siqa", "hellaswag", "winogrande", "arc_easy", "arc_challenge", "openbookqa"],
+    "num_fewshot": 0,
+    "limit": null,
+    "batch_size": 16
+}
