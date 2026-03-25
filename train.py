@@ -62,10 +62,14 @@ def load_model(model_id: str, quant_cfg: dict):
         tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "right"
 
+    # When using multiple GPUs with accelerate/torchrun, each process loads
+    # the model on its own GPU via LOCAL_RANK. This enables true data-parallel
+    # training instead of device_map="auto" which shards for inference only.
+    local_rank = int(os.environ.get("LOCAL_RANK", 0))
     model = AutoModelForCausalLM.from_pretrained(
         model_id,
         quantization_config=bnb_config,
-        device_map="auto",
+        device_map={"": local_rank},
         token=hf_token,
         attn_implementation="flash_attention_2" # not default, used to workaround cUDNN bug in lightning
     )
