@@ -8,7 +8,7 @@ import torch
 load_dotenv()
 from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
-from peft import LoraConfig
+from peft import LoraConfig, prepare_model_for_kbit_training
 from trl import SFTTrainer, SFTConfig
 
 
@@ -51,7 +51,7 @@ def load_model(model_id: str, quant_cfg: dict):
         bnb_config = BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_quant_type=quant_cfg.get("quant_type", "nf4"),
-            bnb_4bit_compute_dtype=torch.bfloat16,
+            bnb_4bit_compute_dtype=torch.float16,
             bnb_4bit_use_double_quant=quant_cfg.get("double_quant", True),
         )
     else:
@@ -67,8 +67,9 @@ def load_model(model_id: str, quant_cfg: dict):
         quantization_config=bnb_config,
         device_map="auto",
         token=hf_token,
-        attn_implementation="eager"
+        attn_implementation="sdpa"
     )
+    model = prepare_model_for_kbit_training(model)
     return model, tokenizer
 
 
@@ -103,10 +104,13 @@ def train(model, tokenizer, dataset, peft_config, output_dir: str, train_cfg: di
         save_steps=train_cfg["save_steps"],
         max_steps=train_cfg.get("max_steps", -1),
         seed=train_cfg.get("seed", 42),
-        bf16=train_cfg["bf16"],
+        fp16=train_cfg["fp16"],
         max_grad_norm=train_cfg["max_grad_norm"],
         dataset_text_field="text",
         max_length=train_cfg["max_length"],
+        packing=True,
+        gradient_checkpointing=True,
+        gradient_checkpointing_kwargs={"use_reentrant": False},
     )
 
     trainer = SFTTrainer(
