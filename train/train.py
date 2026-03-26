@@ -51,7 +51,7 @@ def load_model(model_id: str, quant_cfg: dict):
         bnb_config = BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_quant_type=quant_cfg.get("quant_type", "nf4"),
-            bnb_4bit_compute_dtype=torch.float16,
+            bnb_4bit_compute_dtype=torch.bfloat16,
             bnb_4bit_use_double_quant=quant_cfg.get("double_quant", True),
         )
     else:
@@ -104,7 +104,7 @@ def train(model, tokenizer, dataset, peft_config, output_dir: str, train_cfg: di
         save_steps=train_cfg["save_steps"],
         max_steps=train_cfg.get("max_steps", -1),
         seed=train_cfg.get("seed", 42),
-        fp16=train_cfg["fp16"],
+        bf16=train_cfg.get("bf16", False),
         max_grad_norm=train_cfg["max_grad_norm"],
         dataset_text_field="text",
         max_length=train_cfg["max_length"],
@@ -120,7 +120,13 @@ def train(model, tokenizer, dataset, peft_config, output_dir: str, train_cfg: di
         args=training_args,
         peft_config=peft_config,
     )
-    resume_from_checkpoint = train_cfg.get("resume_from_checkpoint")
+    resume_from_checkpoint = train_cfg.get("resume_from_checkpoint", False)
+    if resume_from_checkpoint:
+        import glob
+        has_checkpoint = bool(glob.glob(os.path.join(output_dir, "checkpoint-*")))
+        if not has_checkpoint:
+            print("No checkpoints found — starting training from scratch.")
+            resume_from_checkpoint = False
     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
     return trainer
 
