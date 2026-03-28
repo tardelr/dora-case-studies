@@ -70,6 +70,14 @@ def load_model(model_id: str, quant_cfg: dict):
         attn_implementation="sdpa"
     )
     model = prepare_model_for_kbit_training(model)
+
+    # ── Quantization sanity check ──
+    print(f"[DEBUG] Requested quantization: {bits}-bit")
+    print(f"[DEBUG] model.is_quantized: {getattr(model, 'is_quantized', False)}")
+    print(f"[DEBUG] Memory footprint: {model.get_memory_footprint() / 1e9:.2f} GB")
+    sample_layer = model.model.layers[0].self_attn.q_proj
+    print(f"[DEBUG] q_proj type: {type(sample_layer).__name__}, weight dtype: {sample_layer.weight.dtype}")
+
     return model, tokenizer
 
 
