@@ -12,15 +12,14 @@ from peft import LoraConfig, prepare_model_for_kbit_training
 from trl import SFTTrainer, SFTConfig
 
 
-# ── Load config ─────────────────────────────────────────────────────
+# ── Load config 
 
 def load_config(path: str = "train_config.json") -> dict:
     with open(path) as f:
         return json.load(f)
 
 
-# ── Load dataset ─────────────────────────────────────────────────────
-
+# ── Load dataset 
 def load_training_dataset(dataset_url: str):
     print("Loading dataset …")
     dataset = load_dataset("json", data_files=dataset_url, split="train")
@@ -67,6 +66,7 @@ def load_model(model_id: str, quant_cfg: dict):
         quantization_config=bnb_config,
         device_map="auto",
         token=hf_token,
+        torch_dtype=torch.bfloat16,
         attn_implementation="sdpa"
     )
     model = prepare_model_for_kbit_training(model)
@@ -87,7 +87,7 @@ def get_peft_config(lora_cfg: dict, use_dora: bool = False):
     )
 
 
-# ── Train ────────────────────────────────────────────────────────────
+# ── Train 
 
 def train(model, tokenizer, dataset, peft_config, output_dir: str, train_cfg: dict):
     print("Starting training …")
@@ -131,8 +131,7 @@ def train(model, tokenizer, dataset, peft_config, output_dir: str, train_cfg: di
     return trainer
 
 
-# ── Save adapter ─────────────────────────────────────────────────────
-
+# ── Save adapter 
 def save_adapter(trainer, tokenizer, output_dir: str, config: dict = None):
     adapter_path = f"{output_dir}/final_adapter"
     trainer.model.save_pretrained(adapter_path)
@@ -146,7 +145,7 @@ def save_adapter(trainer, tokenizer, output_dir: str, config: dict = None):
     return adapter_path
 
 
-# ── Quick inference test ─────────────────────────────────────────────
+# ── inference test 
 
 def test_inference(model, tokenizer, prompt: str):
     model.eval()
@@ -156,7 +155,7 @@ def test_inference(model, tokenizer, prompt: str):
     print(tokenizer.decode(output[0], skip_special_tokens=True))
 
 
-# ── Main ─────────────────────────────────────────────────────────────
+# ── Main 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Fine-tune a model with LoRA/DoRA on commonsense data")

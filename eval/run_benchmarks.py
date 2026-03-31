@@ -4,8 +4,8 @@ import os
 import shutil
 
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from peft import PeftModel
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+from peft import PeftModel, prepare_model_for_kbit_training
 import lm_eval
 from lm_eval.models.huggingface import HFLM
 
@@ -19,25 +19,44 @@ def load_config(path: str) -> dict:
 
 # ── Load base model & tokenizer ─────────────────────────────────────
 
-def load_base_model(model_id: str):
+def load_base_model(model_id: str, quant_cfg: dict = None):
     print(f"Loading tokenizer & base model ({model_id}) …")
     tokenizer = AutoTokenizer.from_pretrained(model_id)
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+
+    bnb_config = None
+    if quant_cfg:
+        bits = quant_cfg.get("bits", 4)
+        if bits == 8:
+            bnb_config = BitsAndBytesConfig(load_in_8bit=True)
+        elif bits == 4:
+            bnb_config = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_quant_type=quant_cfg.get("quant_type", "nf4"),
+                bnb_4bit_compute_dtype=torch.bfloat16,
+                bnb_4bit_use_double_quant=quant_cfg.get("double_quant", True),
+            )
+
     model = AutoModelForCausalLM.from_pretrained(
         model_id,
         device_map="auto",
         torch_dtype=torch.bfloat16,
+        quantization_config=bnb_config,
+        attn_implementation="sdpa",
     )
+    if quant_cfg:
+        model = prepare_model_for_kbit_training(model)
     return model, tokenizer
 
 
-# ── Merge adapter ────────────────────────────────────────────────────
+# ── Apply adapter (no merging) ───────────────────────────────────────
 
-def merge_adapter(base_model, adapter_path: str):
-    print(f"Loading & merging adapter from {adapter_path} …")
+def apply_adapter(base_model, adapter_path: str):
+    print(f"Loading adapter from {adapter_path} …")
     model = PeftModel.from_pretrained(base_model, adapter_path)
-    merged = model.merge_and_unload()
-    print("Adapter merged successfully.")
-    return merged
+    print("Adapter attached (unmerged, preserving quantization).")
+    return model
 
 
 # ── Run benchmarks ───────────────────────────────────────────────────
@@ -92,11 +111,12 @@ if __name__ == "__main__":
 
     cfg = load_config(args.config)
 
-    base_model, tokenizer = load_base_model(cfg["base_model_id"])
+    quant_cfg = cfg.get("quantization")
+    base_model, tokenizer = load_base_model(cfg["base_model_id"], quant_cfg)
 
     adapter_path = cfg.get("adapter_path")
     if adapter_path:
-        eval_model = merge_adapter(base_model, adapter_path)
+        eval_model = apply_adapter(base_model, adapter_path)
     else:
         print("No adapter_path — evaluating base model directly.")
         eval_model = base_model
