@@ -5,7 +5,7 @@ import shutil
 
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
-from peft import PeftModel, prepare_model_for_kbit_training
+from peft import PeftModel
 import lm_eval
 from lm_eval.models.huggingface import HFLM
 
@@ -45,8 +45,6 @@ def load_base_model(model_id: str, quant_cfg: dict = None):
         quantization_config=bnb_config,
         attn_implementation="sdpa",
     )
-    if quant_cfg:
-        model = prepare_model_for_kbit_training(model)
     return model, tokenizer
 
 
