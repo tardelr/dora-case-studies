@@ -8,18 +8,19 @@ import torch
 load_dotenv()
 from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
-from peft import LoraConfig, prepare_model_for_kbit_training
+from peft import LoraConfig, PeftModel, prepare_model_for_kbit_training
 from trl import SFTTrainer, SFTConfig
 
 
-# ── Load config 
+# ── Load config ────────────────────────────────────────────────────────
 
 def load_config(path: str = "train_config.json") -> dict:
     with open(path) as f:
         return json.load(f)
 
 
-# ── Load dataset 
+# ── Load dataset ───────────────────────────────────────────────────────
+
 def load_training_dataset(dataset_url: str):
     print("Loading dataset …")
     dataset = load_dataset("json", data_files=dataset_url, split="train")
@@ -37,24 +38,26 @@ def load_training_dataset(dataset_url: str):
     return dataset
 
 
-# ── Load model & tokenizer ──────────────────────────────────────────
+# ── Load model & tokenizer ────────────────────────────────────────────
 
-def load_model(model_id: str, quant_cfg: dict):
+def load_model(model_id: str, quant_cfg: dict = None, prepare_for_training: bool = True):
     print("Loading model & tokenizer …")
     hf_token = os.environ.get("HF_TOKEN")
-    bits = quant_cfg.get("bits", 4)
 
-    if bits == 8:
-        bnb_config = BitsAndBytesConfig(load_in_8bit=True)
-    elif bits == 4:
-        bnb_config = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_quant_type=quant_cfg.get("quant_type", "nf4"),
-            bnb_4bit_compute_dtype=torch.bfloat16,
-            bnb_4bit_use_double_quant=quant_cfg.get("double_quant", True),
-        )
-    else:
-        raise ValueError(f"Unsupported bits: {bits}. Use 4 or 8.")
+    bnb_config = None
+    if quant_cfg:
+        bits = quant_cfg.get("bits", 4)
+        if bits == 8:
+            bnb_config = BitsAndBytesConfig(load_in_8bit=True)
+        elif bits == 4:
+            bnb_config = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_quant_type=quant_cfg.get("quant_type", "nf4"),
+                bnb_4bit_compute_dtype=torch.bfloat16,
+                bnb_4bit_use_double_quant=quant_cfg.get("double_quant", True),
+            )
+        else:
+            raise ValueError(f"Unsupported bits: {bits}. Use 4 or 8.")
 
     tokenizer = AutoTokenizer.from_pretrained(model_id, token=hf_token)
     if tokenizer.pad_token is None:
@@ -67,13 +70,14 @@ def load_model(model_id: str, quant_cfg: dict):
         device_map="auto",
         token=hf_token,
         torch_dtype=torch.bfloat16,
-        attn_implementation="sdpa"
+        attn_implementation="sdpa",
     )
-    model = prepare_model_for_kbit_training(model)
+    if prepare_for_training:
+        model = prepare_model_for_kbit_training(model)
     return model, tokenizer
 
 
-# ── Configure LoRA/DoRA adapter ──────────────────────────────────────
+# ── Configure LoRA/DoRA adapter ────────────────────────────────────────
 
 def get_peft_config(lora_cfg: dict, use_dora: bool = False):
     return LoraConfig(
@@ -87,7 +91,7 @@ def get_peft_config(lora_cfg: dict, use_dora: bool = False):
     )
 
 
-# ── Train 
+# ── Train ──────────────────────────────────────────────────────────────
 
 def train(model, tokenizer, dataset, peft_config, output_dir: str, train_cfg: dict):
     print("Starting training …")
@@ -131,7 +135,8 @@ def train(model, tokenizer, dataset, peft_config, output_dir: str, train_cfg: di
     return trainer
 
 
-# ── Save adapter 
+# ── Save adapter ───────────────────────────────────────────────────────
+
 def save_adapter(trainer, tokenizer, output_dir: str, config: dict = None):
     adapter_path = f"{output_dir}/final_adapter"
     trainer.model.save_pretrained(adapter_path)
@@ -145,7 +150,7 @@ def save_adapter(trainer, tokenizer, output_dir: str, config: dict = None):
     return adapter_path
 
 
-# ── inference test 
+# ── Inference test ─────────────────────────────────────────────────────
 
 def test_inference(model, tokenizer, prompt: str):
     model.eval()
@@ -155,18 +160,69 @@ def test_inference(model, tokenizer, prompt: str):
     print(tokenizer.decode(output[0], skip_special_tokens=True))
 
 
-# ── Main 
+# ── Apply adapter (no merging) ─────────────────────────────────────────
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Fine-tune a model with LoRA/DoRA on commonsense data")
-    parser.add_argument("--config", default="train_config.json", help="Path to JSON config file")
-    args = parser.parse_args()
+def apply_adapter(base_model, adapter_path: str):
+    print(f"Loading adapter from {adapter_path} …")
+    model = PeftModel.from_pretrained(base_model, adapter_path)
+    print("Adapter attached (unmerged, preserving quantization).")
+    return model
 
-    cfg = load_config(args.config)
 
+# ── Run benchmarks ─────────────────────────────────────────────────────
+
+def run_benchmarks(model, tokenizer, tasks, num_fewshot=0, limit=None, batch_size=16):
+    import lm_eval
+    from lm_eval.models.huggingface import HFLM
+
+    print(f"Running benchmarks: {tasks}")
+    eval_model = HFLM(
+        pretrained=model,
+        tokenizer=tokenizer,
+        batch_size=batch_size,
+    )
+    results = lm_eval.simple_evaluate(
+        model=eval_model,
+        tasks=tasks,
+        num_fewshot=num_fewshot,
+        limit=limit,
+    )
+    return results
+
+
+# ── Print results ──────────────────────────────────────────────────────
+
+def print_results(results: dict):
+    print("\n── Results ──")
+    for task, metrics in results["results"].items():
+        acc = metrics.get("acc,none", metrics.get("acc", "N/A"))
+        acc_norm = metrics.get("acc_norm,none", metrics.get("acc_norm", "N/A"))
+        print(f"  {task:>12s}  acc={acc}  acc_norm={acc_norm}")
+
+
+# ── Export results & config ────────────────────────────────────────────
+
+def export_results(results: dict, config: dict, output_dir: str):
+    os.makedirs(output_dir, exist_ok=True)
+
+    results_path = os.path.join(output_dir, "results.json")
+    with open(results_path, "w") as f:
+        json.dump(results, f, default=str, indent=2)
+    print(f"Results saved to {results_path}")
+
+    config_path = os.path.join(output_dir, "eval_config.json")
+    with open(config_path, "w") as f:
+        json.dump(config, f, indent=2)
+    print(f"Config saved to {config_path}")
+
+
+# ── Run training pipeline ─────────────────────────────────────────────
+
+def run_train(cfg):
     dataset = load_training_dataset(cfg["dataset_url"])
     model, tokenizer = load_model(cfg["model_id"], cfg["quantization"])
     peft_config = get_peft_config(cfg["lora"], use_dora=cfg["use_dora"])
+
     train_cfg = cfg["training"]
     if "seed" in cfg:
         train_cfg["seed"] = cfg["seed"]
@@ -174,9 +230,64 @@ if __name__ == "__main__":
         train_cfg["max_steps"] = cfg["max_steps"]
     if cfg.get("resume_from_checkpoint"):
         train_cfg["resume_from_checkpoint"] = cfg["resume_from_checkpoint"]
+
     trainer = train(model, tokenizer, dataset, peft_config, cfg["output_dir"], train_cfg)
     save_adapter(trainer, tokenizer, cfg["output_dir"], config=cfg)
 
     test_prompt = cfg.get("test_prompt")
     if test_prompt:
         test_inference(trainer.model, tokenizer, test_prompt)
+
+    return trainer, model, tokenizer
+
+
+# ── Run evaluation pipeline ───────────────────────────────────────────
+
+def run_eval(cfg):
+    eval_cfg = cfg["eval"]
+    adapter_path = os.path.join(cfg["output_dir"], "final_adapter")
+
+    model, tokenizer = load_model(cfg["model_id"], cfg.get("quantization"), prepare_for_training=False)
+
+    if os.path.exists(adapter_path):
+        model = apply_adapter(model, adapter_path)
+    else:
+        print(f"No adapter found at {adapter_path} — evaluating base model directly.")
+
+    results = run_benchmarks(
+        model,
+        tokenizer,
+        tasks=eval_cfg["tasks"],
+        num_fewshot=eval_cfg.get("num_fewshot", 0),
+        limit=eval_cfg.get("limit"),
+        batch_size=eval_cfg.get("batch_size", 16),
+    )
+    print_results(results)
+
+    output_basename = os.path.basename(cfg["output_dir"].rstrip("/"))
+    results_dir = os.path.join("eval-results", output_basename)
+    export_results(results, cfg, results_dir)
+
+
+# ── Main ───────────────────────────────────────────────────────────────
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Fine-tune and evaluate models with LoRA/DoRA")
+    parser.add_argument("--config", default="train_config.json", help="Path to JSON config file")
+    parser.add_argument("--mode", default="train", choices=["train", "eval", "all"],
+                        help="Run mode: train, eval, or all (default: train)")
+    args = parser.parse_args()
+
+    cfg = load_config(args.config)
+
+    if args.mode == "train":
+        run_train(cfg)
+
+    elif args.mode == "eval":
+        run_eval(cfg)
+
+    elif args.mode == "all":
+        trainer, model, tokenizer = run_train(cfg)
+        del trainer, model, tokenizer
+        torch.cuda.empty_cache()
+        run_eval(cfg)

@@ -33,5 +33,11 @@
         "max_length": 512,
         "seed": 42,
         "resume_from_checkpoint": false
+    },
+    "eval": {
+        "tasks": ["boolq", "piqa", "siqa", "hellaswag", "winogrande", "arc_easy", "arc_challenge", "openbookqa"],
+        "num_fewshot": 0,
+        "limit": null,
+        "batch_size": 16
     }
 }
