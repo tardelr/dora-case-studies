@@ -104,7 +104,7 @@ def export_results(results: dict, config_path: str, output_dir: str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run lm-eval benchmarks — config-driven")
-    parser.add_argument("--config", required=True, help="Path to eval config JSON")
+    parser.add_argument("--config", required=True)
     args = parser.parse_args()
 
     cfg = load_config(args.config)

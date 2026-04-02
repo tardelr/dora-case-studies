@@ -2,6 +2,11 @@
     "model_name": "qlora",
     "base_model_id": "Qwen/Qwen2.5-1.5B",
     "adapter_path": "./qwen2.5-1.5b-lora-commonsense/final_adapter",
+    "quantization": {
+        "bits": 4,
+        "quant_type": "nf4",
+        "double_quant": true
+    },
 
     "tasks": ["boolq", "piqa", "siqa", "hellaswag", "winogrande", "arc_easy", "arc_challenge", "openbookqa"],
     "num_fewshot": 0,
