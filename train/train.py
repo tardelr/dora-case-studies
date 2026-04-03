@@ -112,7 +112,7 @@ def train(model, tokenizer, dataset, peft_config, output_dir: str, train_cfg: di
         max_grad_norm=train_cfg["max_grad_norm"],
         dataset_text_field="text",
         max_length=train_cfg["max_length"],
-        packing=True,
+        packing=False,
         gradient_checkpointing=True,
         gradient_checkpointing_kwargs={"use_reentrant": False},
     )
