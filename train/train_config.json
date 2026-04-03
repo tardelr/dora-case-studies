@@ -4,11 +4,7 @@
    "output_dir": "./qwen2.5-1.5b-lora-commonsense",
    "use_dora": false,
    "skip_test": false,
-   "quantization": {
-       "bits": 4,
-        "quant_type": "nf4",
-        "double_quant": true
-    },
+   "quantization": null,
     "lora": {
         "r": 16,
         "lora_alpha": 32,
