@@ -264,8 +264,7 @@ def run_eval(cfg):
     )
     print_results(results)
 
-    output_basename = os.path.basename(cfg["output_dir"].rstrip("/"))
-    results_dir = os.path.join("eval-results", output_basename)
+    results_dir = os.path.join(cfg["output_dir"], "eval-results")
     export_results(results, cfg, results_dir)
 
 
@@ -276,9 +275,12 @@ if __name__ == "__main__":
     parser.add_argument("--config", default="train_config.json", help="Path to JSON config file")
     parser.add_argument("--mode", default="train", choices=["train", "eval", "all"],
                         help="Run mode: train, eval, or all (default: train)")
+    parser.add_argument("--output", default=None, help="Output directory for adapter and eval results")
     args = parser.parse_args()
 
     cfg = load_config(args.config)
+    if args.output:
+        cfg["output_dir"] = args.output
 
     if args.mode == "train":
         run_train(cfg)
