@@ -40,9 +40,11 @@ def load_training_dataset(dataset_url: str):
 
 # ── Load model & tokenizer ────────────────────────────────────────────
 
-def load_model(model_id: str, quant_cfg: dict = None, prepare_for_training: bool = True):
+def load_model(model_id: str, quant_cfg: dict = None, prepare_for_training: bool = True,
+               use_bf16: bool = False):
     print("Loading model & tokenizer …")
     hf_token = os.environ.get("HF_TOKEN")
+    dtype = torch.bfloat16 if use_bf16 else torch.float16
 
     bnb_config = None
     if quant_cfg:
@@ -53,7 +55,7 @@ def load_model(model_id: str, quant_cfg: dict = None, prepare_for_training: bool
             bnb_config = BitsAndBytesConfig(
                 load_in_4bit=True,
                 bnb_4bit_quant_type=quant_cfg.get("quant_type", "nf4"),
-                bnb_4bit_compute_dtype=torch.float16,
+                bnb_4bit_compute_dtype=dtype,
                 bnb_4bit_use_double_quant=quant_cfg.get("double_quant", True),
             )
         else:
@@ -69,7 +71,7 @@ def load_model(model_id: str, quant_cfg: dict = None, prepare_for_training: bool
         quantization_config=bnb_config,
         device_map="auto",
         token=hf_token,
-        torch_dtype=torch.float16,
+        torch_dtype=dtype,
         attn_implementation="sdpa",
     )
     if prepare_for_training and bnb_config is not None:
@@ -109,6 +111,7 @@ def train(model, tokenizer, dataset, peft_config, output_dir: str, train_cfg: di
         max_steps=train_cfg.get("max_steps", -1),
         seed=train_cfg.get("seed", 42),
         fp16=train_cfg.get("fp16", False),
+        bf16=train_cfg.get("bf16", False),
         max_grad_norm=train_cfg["max_grad_norm"],
         dataset_text_field="text",
         max_length=train_cfg["max_length"],
@@ -220,7 +223,9 @@ def export_results(results: dict, config: dict, output_dir: str):
 
 def run_train(cfg):
     dataset = load_training_dataset(cfg["dataset_url"])
-    model, tokenizer = load_model(cfg["model_id"], cfg["quantization"])
+    use_bf16 = cfg.get("training", {}).get("bf16", False)
+    model, tokenizer = load_model(cfg["model_id"], cfg["quantization"],
+                                  use_bf16=use_bf16)
     peft_config = get_peft_config(cfg["lora"], use_dora=cfg["use_dora"])
 
     train_cfg = cfg["training"]
@@ -247,7 +252,9 @@ def run_eval(cfg):
     eval_cfg = cfg["eval"]
     adapter_path = os.path.join(cfg["output_dir"], "final_adapter")
 
-    model, tokenizer = load_model(cfg["model_id"], cfg.get("quantization"), prepare_for_training=False)
+    use_bf16 = cfg.get("training", {}).get("bf16", False)
+    model, tokenizer = load_model(cfg["model_id"], cfg.get("quantization"),
+                                  prepare_for_training=False, use_bf16=use_bf16)
 
     if os.path.exists(adapter_path):
         model = apply_adapter(model, adapter_path)
