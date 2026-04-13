@@ -12,14 +12,14 @@ from peft import LoraConfig, PeftModel, prepare_model_for_kbit_training
 from trl import SFTTrainer, SFTConfig
 
 
-# ── Load config ────────────────────────────────────────────────────────
+# load config
 
 def load_config(path: str = "train_config.json") -> dict:
     with open(path) as f:
         return json.load(f)
 
 
-# ── Load dataset ───────────────────────────────────────────────────────
+# load dataset
 
 def load_training_dataset(dataset_url: str):
     print("Loading dataset …")
@@ -38,7 +38,7 @@ def load_training_dataset(dataset_url: str):
     return dataset
 
 
-# ── Load model & tokenizer ────────────────────────────────────────────
+# load model & tokenizer
 
 def load_model(model_id: str, quant_cfg: dict = None, prepare_for_training: bool = True,
                use_bf16: bool = False):
@@ -79,7 +79,7 @@ def load_model(model_id: str, quant_cfg: dict = None, prepare_for_training: bool
     return model, tokenizer
 
 
-# ── Configure LoRA/DoRA adapter ────────────────────────────────────────
+# lora/dora config
 
 def get_peft_config(lora_cfg: dict, use_dora: bool = False):
     return LoraConfig(
@@ -93,7 +93,7 @@ def get_peft_config(lora_cfg: dict, use_dora: bool = False):
     )
 
 
-# ── Train ──────────────────────────────────────────────────────────────
+# train
 
 def train(model, tokenizer, dataset, peft_config, output_dir: str, train_cfg: dict):
     print("Starting training …")
@@ -138,7 +138,7 @@ def train(model, tokenizer, dataset, peft_config, output_dir: str, train_cfg: di
     return trainer
 
 
-# ── Save adapter ───────────────────────────────────────────────────────
+# save adapter
 
 def save_adapter(trainer, tokenizer, output_dir: str, config: dict = None):
     adapter_path = f"{output_dir}/final_adapter"
@@ -153,7 +153,7 @@ def save_adapter(trainer, tokenizer, output_dir: str, config: dict = None):
     return adapter_path
 
 
-# ── Inference test ─────────────────────────────────────────────────────
+# inference test
 
 def test_inference(model, tokenizer, prompt: str):
     model.eval()
@@ -163,16 +163,16 @@ def test_inference(model, tokenizer, prompt: str):
     print(tokenizer.decode(output[0], skip_special_tokens=True))
 
 
-# ── Apply adapter (no merging) ─────────────────────────────────────────
+# apply adapter
 
 def apply_adapter(base_model, adapter_path: str):
     print(f"Loading adapter from {adapter_path} …")
     model = PeftModel.from_pretrained(base_model, adapter_path)
-    print("Adapter attached (unmerged, preserving quantization).")
+    print("Adapter loaded.")
     return model
 
 
-# ── Run benchmarks ─────────────────────────────────────────────────────
+# run benchmarks
 
 def run_benchmarks(model, tokenizer, tasks, num_fewshot=0, limit=None, batch_size=16):
     import lm_eval
@@ -193,7 +193,7 @@ def run_benchmarks(model, tokenizer, tasks, num_fewshot=0, limit=None, batch_siz
     return results
 
 
-# ── Print results ──────────────────────────────────────────────────────
+# print results
 
 def print_results(results: dict):
     print("\n── Results ──")
@@ -203,7 +203,7 @@ def print_results(results: dict):
         print(f"  {task:>12s}  acc={acc}  acc_norm={acc_norm}")
 
 
-# ── Export results & config ────────────────────────────────────────────
+# export results
 
 def export_results(results: dict, config: dict, output_dir: str):
     os.makedirs(output_dir, exist_ok=True)
@@ -219,7 +219,7 @@ def export_results(results: dict, config: dict, output_dir: str):
     print(f"Config saved to {config_path}")
 
 
-# ── Run training pipeline ─────────────────────────────────────────────
+# training pipeline
 
 def run_train(cfg):
     dataset = load_training_dataset(cfg["dataset_url"])
@@ -246,7 +246,7 @@ def run_train(cfg):
     return trainer, model, tokenizer
 
 
-# ── Run evaluation pipeline ───────────────────────────────────────────
+# eval pipeline
 
 def run_eval(cfg):
     eval_cfg = cfg["eval"]
@@ -274,8 +274,6 @@ def run_eval(cfg):
     results_dir = os.path.join(cfg["output_dir"], "eval-results")
     export_results(results, cfg, results_dir)
 
-
-# ── Main ───────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Fine-tune and evaluate models with LoRA/DoRA")
