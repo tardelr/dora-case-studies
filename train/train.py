@@ -11,6 +11,9 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 from peft import LoraConfig, PeftModel, prepare_model_for_kbit_training
 from trl import SFTTrainer, SFTConfig
 
+import lm_eval
+from lm_eval.models.huggingface import HFLM
+
 
 # load config
 
@@ -18,22 +21,38 @@ def load_config(path: str = "train_config.json") -> dict:
     with open(path) as f:
         return json.load(f)
 
+# function used in both train/eval to format instructions to original authors format
+
+def format_example(example):
+    if example["input"]:
+        example['text'] = f"""Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.
+
+### Instruction:
+{example["instruction"]}
+                
+### Input:
+{example["input"]}
+
+### Response:
+{example["output"]}"""
+    else:
+        example['text'] =f"""Below is an instruction that describes a task. Write a response that appropriately completes the request.  
+
+### Instruction:
+{example["instruction"]}
+
+### Response:
+{example["output"]}""" 
+    example['text'] += tokenizer.eos_token ## training might fail if model don't have EOS token.
+    return example
 
 # load dataset
-
 def load_training_dataset(dataset_url: str):
     print("Loading dataset …")
     dataset = load_dataset("json", data_files=dataset_url, split="train")
 
-    def format_example(example):
-        parts = [example.get("instruction", "")]
-        if example.get("input"):
-            parts.append(example["input"])
-        parts.append(example.get("output", ""))
-        example["text"] = "\n".join(parts)
-        return example
-
     dataset = dataset.map(format_example)
+    
     print(f"Loaded {len(dataset)} examples")
     return dataset
 
@@ -175,8 +194,6 @@ def apply_adapter(base_model, adapter_path: str):
 # run benchmarks
 
 def run_benchmarks(model, tokenizer, tasks, num_fewshot=0, limit=None, batch_size=16):
-    import lm_eval
-    from lm_eval.models.huggingface import HFLM
 
     print(f"Running benchmarks: {tasks}")
     eval_model = HFLM(
