@@ -701,6 +701,30 @@ def write_run_metadata(config, output_dir, trainer, train_dataset, eval_dataset)
     with (output_dir / "run_metadata.json").open("w", encoding="utf-8") as f:
         json.dump(metadata, f, indent=2, default=str)
 
+def maybe_cast_magnitude_to_fp32(model, adapter_cfg):
+    requested_dtype = adapter_cfg.get("magnitude_dtype")
+    if requested_dtype not in {"fp32", "float32"}:
+        return
+
+    converted = []
+    for name, parameter in model.named_parameters():
+        if _is_magnitude_param(name):
+            parameter.data = parameter.data.float()
+            converted.append(name)
+
+    if not converted:
+        raise RuntimeError("Requested fp32 magnitude, but no DoRA magnitude parameters were found.")
+
+    remaining = [
+        name
+        for name, parameter in model.named_parameters()
+        if _is_magnitude_param(name) and parameter.dtype != torch.float32
+    ]
+    if remaining:
+        raise RuntimeError(f"Magnitude parameters were not converted: {remaining}")
+
+    print(f"[magnitude_dtype] converted {len(converted)} magnitude tensors to fp32")
+
 
 # ---------------------------------------------------------------------------
 # Config finalization
@@ -774,6 +798,23 @@ def main():
         trainer_kwargs["tokenizer"] = tokenizer
         trainer = SFTTrainer(**trainer_kwargs)
 
+        requested_dtype = config["adapter"].get("magnitude_dtype")
+        
+        if requested_dtype == "fp32": ## if its not fp32 itll raise an error
+            converted = 0
+        
+            for name, parameter in trainer.model.named_parameters():
+                if _is_magnitude_param(name):
+                    parameter.data = parameter.data.to(torch.float32)
+                    converted += 1
+        
+            if converted != 160: # must change for different context
+                raise RuntimeError(
+                    f"Expected 160 magnitude tensors, converted {converted}"
+                )
+
+        
+    
     write_run_metadata(config, output_dir, trainer, train_dataset, eval_dataset)
 
     run_magnitude_audit(
