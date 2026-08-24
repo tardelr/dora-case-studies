@@ -703,28 +703,44 @@ def write_run_metadata(config, output_dir, trainer, train_dataset, eval_dataset)
 
 def maybe_cast_magnitude_to_fp32(model, adapter_cfg):
     requested_dtype = adapter_cfg.get("magnitude_dtype")
+
     if requested_dtype not in {"fp32", "float32"}:
+        print(
+            f"[magnitude_dtype] native dtype retained; "
+            f"requested={requested_dtype!r}"
+        )
         return
 
     converted = []
-    for name, parameter in model.named_parameters():
-        if _is_magnitude_param(name):
-            parameter.data = parameter.data.float()
-            converted.append(name)
+
+    with torch.no_grad():
+        for name, parameter in model.named_parameters():
+            if _is_magnitude_param(name):
+                parameter.data = parameter.data.to(torch.float32)
+                converted.append(name)
 
     if not converted:
-        raise RuntimeError("Requested fp32 magnitude, but no DoRA magnitude parameters were found.")
+        raise RuntimeError(
+            "Requested FP32 magnitude, but no DoRA magnitude "
+            "parameters were found"
+        )
 
     remaining = [
-        name
+        (name, str(parameter.dtype))
         for name, parameter in model.named_parameters()
-        if _is_magnitude_param(name) and parameter.dtype != torch.float32
+        if _is_magnitude_param(name)
+        and parameter.dtype != torch.float32
     ]
+
     if remaining:
-        raise RuntimeError(f"Magnitude parameters were not converted: {remaining}")
+        raise RuntimeError(
+            f"Magnitude parameters were not converted: {remaining[:5]}"
+        )
 
-    print(f"[magnitude_dtype] converted {len(converted)} magnitude tensors to fp32")
-
+    print(
+        f"[magnitude_dtype] converted {len(converted)} "
+        f"magnitude tensors to FP32"
+    )
 
 # ---------------------------------------------------------------------------
 # Config finalization
@@ -790,31 +806,54 @@ def main():
     }
     try:
         trainer = SFTTrainer(**trainer_kwargs)
+        
     except TypeError as exc:
-        # Old trl versions don't accept processing_class; fall back to tokenizer=.
+        # Old TRL versions do not accept processing_class.
         if "processing_class" not in str(exc):
             raise
+    
         trainer_kwargs.pop("processing_class")
         trainer_kwargs["tokenizer"] = tokenizer
         trainer = SFTTrainer(**trainer_kwargs)
-
-        requested_dtype = config["adapter"].get("magnitude_dtype")
-        
-        if requested_dtype == "fp32": ## if its not fp32 itll raise an error
-            converted = 0
-        
-            for name, parameter in trainer.model.named_parameters():
-                if _is_magnitude_param(name):
-                    parameter.data = parameter.data.to(torch.float32)
-                    converted += 1
-        
-            if converted != 160: # must change for different context
-                raise RuntimeError(
-                    f"Expected 160 magnitude tensors, converted {converted}"
-                )
-
-        
     
+    
+    # This must be OUTSIDE the try/except because both construction
+    # paths require the intervention.
+    maybe_cast_magnitude_to_fp32(
+        trainer.model,
+        config["adapter"],
+    )
+    
+    
+    # Fail fast when FP32 was explicitly requested.
+    requested_dtype = config["adapter"].get("magnitude_dtype")
+    
+    if requested_dtype in {"fp32", "float32"}:
+        magnitude_parameters = [
+            (name, parameter)
+            for name, parameter in trainer.model.named_parameters()
+            if _is_magnitude_param(name)
+        ]
+    
+        if not magnitude_parameters:
+            raise RuntimeError(
+                "FP32 magnitude requested, but no magnitude parameters were found"
+            )
+    
+        actual_dtypes = {
+            parameter.dtype
+            for _, parameter in magnitude_parameters
+        }
+    
+        if actual_dtypes != {torch.float32}:
+            raise RuntimeError(
+                f"FP32 magnitude intervention failed: {actual_dtypes}"
+            )
+    
+        print(
+            f"[magnitude_dtype] verified "
+            f"{len(magnitude_parameters)} FP32 magnitude tensors"
+        )
     write_run_metadata(config, output_dir, trainer, train_dataset, eval_dataset)
 
     run_magnitude_audit(
