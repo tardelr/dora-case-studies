@@ -1,6 +1,10 @@
 # DoRA Case Studies
 
-This project is built to train LoRA and DoRA adapters on language models. LoRA and DoRA are both methods for fine-tuning a model without updating all of its weights, which makes training faster and cheaper. The code here lets you train an adapter, then evaluate how well it performs.
+This project is built to reproduce the original DoRA paper results[1], and assess if the authors' results would hold under quantization. _Publication pending_
+
+The method itself is very similar to what would be necessary to train an arbitrary LoRA adapter, but there are specificities used to handle special DoRA cases. 
+
+The notebooks with results' analysis were made available, but the underlying source files isn't because it'd require too much storage.
 
 ## Training
 
@@ -33,3 +37,7 @@ Output is written to `{experiment.output_dir}/paper_eval_results/paper_eval_{tim
 ## Notebooks
 
 _(to be added)_
+
+
+## References
+[1] _Add reference to the DoRA paper_
