@@ -1,0 +1,3 @@
+run,n_magnitude_tensors,n_trainable,n_frozen,dtype_counts
+bf16-native,160,160,0,{'torch.bfloat16': 160}
+fp32-magnitude,160,160,0,{'torch.float32': 160}

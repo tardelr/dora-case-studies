@@ -1,0 +1,5 @@
+,lora-v3,lora-match-seed42,lora-match-seed43,dora-seed42,dora-seed43,qdora-seed42-fp32,qdora-seed43-fp32,qlora-seed42,qlora-seed43
+enabled,False,False,False,False,False,True,True,True,True
+bits,4,4,4,4,4,4,4,4,4
+quant_type,nf4,nf4,nf4,nf4,nf4,nf4,nf4,nf4,nf4
+double_quant,True,True,True,True,True,True,True,True,True

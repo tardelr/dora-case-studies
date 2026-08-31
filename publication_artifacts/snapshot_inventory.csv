@@ -1,0 +1,15 @@
+run,step,snapshot,path
+bf16-native,10,fraction_0.005_step_10,anon-review-12345/dora-reproducibility-study/qdora-diagnostic-run/control-bf16/analysis_snapshots/fraction_0.005_step_10/adapter_model.safetensors
+bf16-native,50,fraction_0.025_step_50,anon-review-12345/dora-reproducibility-study/qdora-diagnostic-run/control-bf16/analysis_snapshots/fraction_0.025_step_50/adapter_model.safetensors
+bf16-native,100,fraction_0.05_step_100,anon-review-12345/dora-reproducibility-study/qdora-diagnostic-run/control-bf16/analysis_snapshots/fraction_0.05_step_100/adapter_model.safetensors
+bf16-native,200,fraction_0.1_step_200,anon-review-12345/dora-reproducibility-study/qdora-diagnostic-run/control-bf16/analysis_snapshots/fraction_0.1_step_200/adapter_model.safetensors
+bf16-native,500,fraction_0.25_step_500,anon-review-12345/dora-reproducibility-study/qdora-diagnostic-run/control-bf16/analysis_snapshots/fraction_0.25_step_500/adapter_model.safetensors
+bf16-native,1000,fraction_0.5_step_1000,anon-review-12345/dora-reproducibility-study/qdora-diagnostic-run/control-bf16/analysis_snapshots/fraction_0.5_step_1000/adapter_model.safetensors
+bf16-native,2000,final_step_2000,anon-review-12345/dora-reproducibility-study/qdora-diagnostic-run/control-bf16/analysis_snapshots/final_step_2000/adapter_model.safetensors
+fp32-magnitude,10,fraction_0.005_step_10,anon-review-12345/dora-reproducibility-study/qdora-diagnostic-run/forced-fp32/analysis_snapshots/fraction_0.005_step_10/adapter_model.safetensors
+fp32-magnitude,50,fraction_0.025_step_50,anon-review-12345/dora-reproducibility-study/qdora-diagnostic-run/forced-fp32/analysis_snapshots/fraction_0.025_step_50/adapter_model.safetensors
+fp32-magnitude,100,fraction_0.05_step_100,anon-review-12345/dora-reproducibility-study/qdora-diagnostic-run/forced-fp32/analysis_snapshots/fraction_0.05_step_100/adapter_model.safetensors
+fp32-magnitude,200,fraction_0.1_step_200,anon-review-12345/dora-reproducibility-study/qdora-diagnostic-run/forced-fp32/analysis_snapshots/fraction_0.1_step_200/adapter_model.safetensors
+fp32-magnitude,500,fraction_0.25_step_500,anon-review-12345/dora-reproducibility-study/qdora-diagnostic-run/forced-fp32/analysis_snapshots/fraction_0.25_step_500/adapter_model.safetensors
+fp32-magnitude,1000,fraction_0.5_step_1000,anon-review-12345/dora-reproducibility-study/qdora-diagnostic-run/forced-fp32/analysis_snapshots/fraction_0.5_step_1000/adapter_model.safetensors
+fp32-magnitude,2000,final_step_2000,anon-review-12345/dora-reproducibility-study/qdora-diagnostic-run/forced-fp32/analysis_snapshots/final_step_2000/adapter_model.safetensors

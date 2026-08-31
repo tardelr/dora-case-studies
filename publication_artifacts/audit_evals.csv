@@ -1,0 +1,13 @@
+,lora-v3,lora-match-seed42,lora-match-seed43,dora-seed42,dora-seed43,qdora-seed42-fp32,qdora-seed43-fp32,qlora-seed42,qlora-seed43
+allow_base_model_eval,False,False,False,False,False,False,False,False,False
+batch_size,1,1,1,1,1,1,1,1,1
+do_sample,False,False,False,False,False,False,False,False,False
+limit,,,,,,,,,
+max_new_tokens,32,32,32,32,32,32,32,32,32
+num_beams,4,4,4,4,4,4,4,4,4
+save_every_n_batches,1,1,1,1,1,1,1,1,1
+task_url_template,https://raw.githubusercontent.com/AGI-Edgerunners/LLM-Adapters/main/dataset/{task}/test.json,https://raw.githubusercontent.com/AGI-Edgerunners/LLM-Adapters/main/dataset/{task}/test.json,https://raw.githubusercontent.com/AGI-Edgerunners/LLM-Adapters/main/dataset/{task}/test.json,https://raw.githubusercontent.com/AGI-Edgerunners/LLM-Adapters/main/dataset/{task}/test.json,https://raw.githubusercontent.com/AGI-Edgerunners/LLM-Adapters/main/dataset/{task}/test.json,https://raw.githubusercontent.com/AGI-Edgerunners/LLM-Adapters/main/dataset/{task}/test.json,https://raw.githubusercontent.com/AGI-Edgerunners/LLM-Adapters/main/dataset/{task}/test.json,https://raw.githubusercontent.com/AGI-Edgerunners/LLM-Adapters/main/dataset/{task}/test.json,https://raw.githubusercontent.com/AGI-Edgerunners/LLM-Adapters/main/dataset/{task}/test.json
+tasks,"['boolq', 'piqa', 'social_i_qa', 'hellaswag', 'winogrande', 'ARC-Easy', 'ARC-Challenge', 'openbookqa']","['boolq', 'piqa', 'social_i_qa', 'hellaswag', 'winogrande', 'ARC-Easy', 'ARC-Challenge', 'openbookqa']","['boolq', 'piqa', 'social_i_qa', 'hellaswag', 'winogrande', 'ARC-Easy', 'ARC-Challenge', 'openbookqa']","['boolq', 'piqa', 'social_i_qa', 'hellaswag', 'winogrande', 'ARC-Easy', 'ARC-Challenge', 'openbookqa']","['boolq', 'piqa', 'social_i_qa', 'hellaswag', 'winogrande', 'ARC-Easy', 'ARC-Challenge', 'openbookqa']","['boolq', 'piqa', 'social_i_qa', 'hellaswag', 'winogrande', 'ARC-Easy', 'ARC-Challenge', 'openbookqa']","['boolq', 'piqa', 'social_i_qa', 'hellaswag', 'winogrande', 'ARC-Easy', 'ARC-Challenge', 'openbookqa']","['boolq', 'piqa', 'social_i_qa', 'hellaswag', 'winogrande', 'ARC-Easy', 'ARC-Challenge', 'openbookqa']","['boolq', 'piqa', 'social_i_qa', 'hellaswag', 'winogrande', 'ARC-Easy', 'ARC-Challenge', 'openbookqa']"
+temperature,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1
+top_k,40,40,40,40,40,40,40,40,40
+top_p,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75

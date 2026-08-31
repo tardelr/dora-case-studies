@@ -1,0 +1,25 @@
+,lora-v3,lora-match-seed42,lora-match-seed43,dora-seed42,dora-seed43,qdora-seed42-fp32,qdora-seed43-fp32,qlora-seed42,qlora-seed43
+bf16,True,True,True,True,True,True,True,True,True
+dataloader_num_workers,0,0,0,0,0,0,0,0,0
+dataset_text_field,text,text,text,text,text,text,text,text,text
+fp16,False,False,False,False,False,False,False,False,False
+gradient_accumulation_steps,1,1,1,1,1,1,1,1,1
+gradient_checkpointing,True,True,True,True,True,True,True,True,True
+gradient_checkpointing_kwargs,{'use_reentrant': False},{'use_reentrant': False},{'use_reentrant': False},{'use_reentrant': False},{'use_reentrant': False},{'use_reentrant': False},{'use_reentrant': False},{'use_reentrant': False},{'use_reentrant': False}
+learning_rate,0.0003,0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,0.0001
+logging_dir,,,,,,,,,
+logging_steps,50,50,50,50,50,50,50,50,50
+lr_scheduler_type,linear,linear,linear,linear,linear,linear,linear,linear,linear
+max_grad_norm,1,1,1,1,1,1,1,1,1
+max_length,256,256,256,256,256,256,256,256,256
+max_steps,-1,-1,-1,-1,-1,-1,-1,-1,-1
+num_train_epochs,3,3,3,3,3,3,3,3,3
+optim,adamw_torch,adamw_torch,adamw_torch,adamw_torch,adamw_torch,adamw_torch,adamw_torch,adamw_torch,adamw_torch
+packing,False,False,False,False,False,False,False,False,False
+per_device_train_batch_size,16,16,16,16,16,16,16,16,16
+report_to,tensorboard,tensorboard,tensorboard,tensorboard,tensorboard,tensorboard,tensorboard,tensorboard,tensorboard
+save_steps,500,500,500,500,500,500,500,500,500
+save_strategy,steps,steps,steps,steps,steps,steps,steps,steps,steps
+save_total_limit,3,3,3,3,3,3,3,3,3
+seed,42,42,43,42,43,42,43,42,43
+warmup_steps,100,100,100,100,100,100,100,100,100

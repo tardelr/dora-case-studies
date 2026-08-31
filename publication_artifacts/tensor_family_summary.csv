@@ -1,0 +1,7 @@
+run,family,n_tensors,moved_tensors,moved_tensor_fraction,min_distinct_hashes,max_distinct_hashes,dtypes
+bf16-native,lora_A,15,15,1.0,7,7,BF16
+bf16-native,lora_B,15,15,1.0,7,7,BF16
+bf16-native,magnitude,160,0,0.0,1,1,BF16
+fp32-magnitude,lora_A,15,15,1.0,7,7,BF16
+fp32-magnitude,lora_B,15,15,1.0,7,7,BF16
+fp32-magnitude,magnitude,160,160,1.0,7,7,F32

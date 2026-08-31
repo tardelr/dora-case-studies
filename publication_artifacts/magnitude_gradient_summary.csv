@@ -1,0 +1,3 @@
+run,logged_steps,n_tensors_min,all_have_grad_every_log,minimum_nonzero_grad_tensor_fraction,median_grad_l2_norm,parameter_dtypes
+bf16-native,200,160,True,1.0,0.005073104868642986,torch.bfloat16
+fp32-magnitude,200,160,True,1.0,0.005053729866631329,torch.float32
