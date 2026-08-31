@@ -46,7 +46,3 @@ Analysis notebooks live in `notebooks/`. Each one takes a hardcoded list of run 
 ## Trained models
 
 All adapters (LoRA, DoRA, QLoRA, QDoRA, across seeds) are available at [tardelr/lora-dora-reproducibility](https://huggingface.co/tardelr/lora-dora-reproducibility).
-
-
-## References
-[1] _Add reference to the DoRA paper_
