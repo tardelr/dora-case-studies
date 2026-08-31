@@ -4,7 +4,7 @@ This project is built to reproduce the original DoRA paper results[1], and asses
 
 The method itself is very similar to what would be necessary to train an arbitrary LoRA adapter, but there are specificities used to handle special DoRA cases. 
 
-The notebooks with results' analysis were made available, but the underlying source files isn't because it'd require too much storage.
+The notebooks with results' analysis were made available, but the underlying source files aren't because they'd require too much storage. The trained adapters are published on Hugging Face: [tardelr/lora-dora-reproducibility](https://huggingface.co/tardelr/lora-dora-reproducibility).
 
 ## Training
 
@@ -36,7 +36,16 @@ Output is written to `{experiment.output_dir}/paper_eval_results/paper_eval_{tim
 
 ## Notebooks
 
-_(to be added)_
+Analysis notebooks live in `notebooks/`. Each one takes a hardcoded list of run directories (edit the paths at the top before running) and writes tables/plots to `notebooks/outputs/`.
+
+- `training_stats.ipynb` — sanity check on a single run's training logs (loss, token accuracy, gradient norms, magnitude audit) before spending compute on evaluation.
+- `audit_runs.ipynb` — reads `resolved_config.yaml` / `run_metadata.json` across all runs and builds comparative tables of hyperparameters, adapter settings, quantization and hardware.
+- `eval_analysis.ipynb` — aggregates `paper_eval` results into one row per run and one column per benchmark, plus per-task correct/total counts and answer parse-failure rates.
+- `mechanistic_analysis.ipynb` — reproduces the paper's weight-decomposition analysis: per-layer magnitude (ΔM) and direction (ΔD) changes across checkpoints, their regression slopes, and low-rank coefficient-update growth.
+
+## Trained models
+
+All adapters (LoRA, DoRA, QLoRA, QDoRA, across seeds) are available at [tardelr/lora-dora-reproducibility](https://huggingface.co/tardelr/lora-dora-reproducibility).
 
 
 ## References
